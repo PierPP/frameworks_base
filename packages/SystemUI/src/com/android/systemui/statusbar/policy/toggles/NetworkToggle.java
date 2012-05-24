@@ -27,14 +27,19 @@ import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import com.android.systemui.R;
+import android.os.Handler;
+import android.os.Message;
 
 public class NetworkToggle extends Toggle {
-
+    private ToggleUpdateThread a_toggleUpdateThread;
+    
     public NetworkToggle(Context context) {
         super(context);
         setLabel(R.string.toggle_data);
         context.registerReceiver(getBroadcastReceiver(), getIntentFilter());
-        updateState();
+        
+        a_toggleUpdateThread = new ToggleUpdateThread(handler);
+        a_toggleUpdateThread.start();
     }
 
     private boolean isMobileDataEnabled() {
@@ -51,8 +56,12 @@ public class NetworkToggle extends Toggle {
 
     @Override
     protected void onCheckChanged(boolean isChecked) {
-        setMobileDataEnabled(isChecked);
-        updateState();
+        setMobileDataEnabled(isChecked);        
+        if (isChecked) {
+            setIcon(R.drawable.toggle_data);
+        } else {
+            setIcon(R.drawable.toggle_data_off);
+        }
     }
 
     protected BroadcastReceiver getBroadcastReceiver() {
@@ -94,4 +103,29 @@ public class NetworkToggle extends Toggle {
         mContext.startActivity(intent);
         return true;
     }
+    
+    final Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            updateState();
+    	}
+    };
+    
+    private class ToggleUpdateThread extends Thread {
+        Handler mHandler;
+       
+        ToggleUpdateThread(Handler h) {
+            mHandler = h;
+        }
+       
+        public void run() {
+            while (true) {
+                 try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) { }
+                Message msg = mHandler.obtainMessage();
+                mHandler.sendMessage(msg);
+            }
+        }
+    }
+        
 }
