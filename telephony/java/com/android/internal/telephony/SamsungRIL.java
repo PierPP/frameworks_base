@@ -597,11 +597,14 @@ public class SamsungRIL extends RIL implements CommandsInterface {
         for (int i = 7; i < numInts; i++) {
             response[i] = -1;
         }
-		
-		if (mIsSamsungCdma)
+
+        if (mIsSamsungCdma){
+            if(response[3] < 0){
+               response[3] = -response[3];
+            }
             // Framework takes care of the rest for us.
             return response;
-
+         }
         /* Matching Samsung signal strength to asu.
 		   Method taken from Samsungs cdma/gsmSignalStateTracker */
         if(mSignalbarCount)
