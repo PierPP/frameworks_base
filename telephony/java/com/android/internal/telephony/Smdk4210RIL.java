@@ -90,7 +90,7 @@ public class Smdk4210RIL extends RIL implements CommandsInterface {
          */
     }
 
-    private boolean NeedReconnect(int networkType)
+    private boolean NeedReconnect()
     {
         ConnectivityManager cm =
             (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -108,7 +108,7 @@ public class Smdk4210RIL extends RIL implements CommandsInterface {
         HandlerThread handlerThread;
         Looper looper;
 
-        if(NeedReconnect(networkType))
+        if(NeedReconnect())
         {
             if (mSmdk4210Handler == null) {
 
