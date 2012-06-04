@@ -16,26 +16,24 @@
 
 package com.android.systemui.statusbar.policy.toggles;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.util.AttributeSet;
-import android.widget.CompoundButton;
-import android.widget.TextView;
 
 import com.android.systemui.R;
 import android.os.Handler;
 import android.os.Message;
 
 public class NetworkToggle extends Toggle {
-    private ToggleUpdateThread a_toggleUpdateThread;
+    private ToggleUpdateThread a_toggleUpdateThread; 
+    boolean mDataEnabled;
     
     public NetworkToggle(Context context) {
         super(context);
         setLabel(R.string.toggle_data);
+        mDataEnabled = isMobileDataEnabled();
         context.registerReceiver(getBroadcastReceiver(), getIntentFilter());
         
         a_toggleUpdateThread = new ToggleUpdateThread(handler);
@@ -49,6 +47,7 @@ public class NetworkToggle extends Toggle {
     }
 
     private void setMobileDataEnabled(boolean on) {
+        mDataEnabled = on;
         ConnectivityManager cm = (ConnectivityManager) mContext
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         cm.setMobileDataEnabled(on);
@@ -72,6 +71,7 @@ public class NetworkToggle extends Toggle {
                 final String action = intent.getAction();
 
                 if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
+                    mDataEnabled = isMobileDataEnabled();
                     updateState();
                 }
             }
@@ -86,7 +86,7 @@ public class NetworkToggle extends Toggle {
 
     @Override
     protected boolean updateInternalToggleState() {
-        mToggle.setChecked(isMobileDataEnabled());
+        mToggle.setChecked(mDataEnabled);
         if (mToggle.isChecked()) {
             setIcon(R.drawable.toggle_data);
         } else {
@@ -98,7 +98,7 @@ public class NetworkToggle extends Toggle {
     @Override
     protected boolean onLongPress() {
         Intent intent = new Intent(
-                android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+                android.provider.Settings.ACTION_DATA_ROAMING_SETTINGS);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         mContext.startActivity(intent);
         return true;
