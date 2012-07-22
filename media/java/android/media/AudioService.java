@@ -2577,14 +2577,8 @@ public class AudioService extends IAudioService.Stub {
                 int lastVolume;
                 if (state == 1) {
                     // Headset plugged in
-                    int volumeRestoreCap;
-                    if (Settings.System.getInt(mContentResolver,
-                            Settings.System.SAFE_HEADSET_VOLUME_RESTORE, 1) == 0) {
-                        // Don't cap
-                        volumeRestoreCap = 8;
-                    } else {
-                        volumeRestoreCap = 4;
-                    }
+                    final boolean capVolumeRestore = Settings.System.getInt(mContentResolver,
+                            Settings.System.SAFE_HEADSET_VOLUME_RESTORE, 1) == 1;
                     for (int stream = 0; stream < STREAM_VOLUME_HEADSET_SETTINGS.length; stream++) {
                         final int streamAlias = STREAM_VOLUME_ALIAS[stream];
                         // Save speaker volume
@@ -2597,27 +2591,29 @@ public class AudioService extends IAudioService.Stub {
                         } catch (SettingNotFoundException e) {
                             lastVolume = -1;
                         }
-                        System.putInt(mContentResolver, STREAM_VOLUME_SPEAKER_SETTINGS[stream],
-                                getStreamVolume(stream));
-                        if (lastVolume >= 0)
-                            if (stream == 0) {
-                                // Don't touch voice call volume
-                                setStreamVolume(stream, lastVolume, 0);
-                            } else if (stream != 3) {
-                                if (lastVolume > volumeRestoreCap) {
-                                    setStreamVolume(stream, volumeRestoreCap, 0);
-                                } else {
-                                    setStreamVolume(stream, lastVolume, 0);
+                        if (lastVolume >= 0) {
+                            if (capVolumeRestore) {
+                                final int volumeCap;
+                                switch (streamAlias) {
+                                    case AudioSystem.STREAM_VOICE_CALL:
+                                        volumeCap = HEADSET_VOLUME_RESTORE_CAP_VOICE_CALL;
+                                        break;
+                                    case AudioSystem.STREAM_MUSIC:
+                                        volumeCap = HEADSET_VOLUME_RESTORE_CAP_MUSIC;
+                                        break;
+                                    case AudioSystem.STREAM_SYSTEM:
+                                    case AudioSystem.STREAM_RING:
+                                    case AudioSystem.STREAM_ALARM:
+                                    case AudioSystem.STREAM_NOTIFICATION:
+                                    default:
+                                        volumeCap = HEADSET_VOLUME_RESTORE_CAP_OTHER;
+                                        break;
                                 }
+                                setStreamVolume(streamAlias, Math.min(volumeCap, lastVolume), 0);
                             } else {
-                                // For media volume the cap is doubled to correspond
-                                // with its finer granularity
-                                if (lastVolume > (volumeRestoreCap * 2)) {
-                                    setStreamVolume(stream, (volumeRestoreCap * 2), 0);
-                                } else {
-                                    setStreamVolume(stream, lastVolume, 0);
-                                }
+                                setStreamVolume(streamAlias, lastVolume, 0);
                             }
+                        }
                     }
                 } else {
                     // Headset disconnected
